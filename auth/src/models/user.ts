@@ -6,7 +6,7 @@ export interface UserAttributes {
   email: string;
 }
 
-export interface UserDoc {
+export interface UserDoc extends Document {
   password: string;
   email: string;
 }
@@ -15,12 +15,22 @@ export interface UserModel extends Model<UserDoc> {
   build(attr: UserAttributes): UserDoc;
 }
 
-const userSchema = new mongoose.Schema({
-  email: String,
-  password: String,
-});
-
-const User = mongoose.model<UserDoc, UserModel>("User", userSchema);
+const userSchema = new mongoose.Schema(
+  {
+    email: String,
+    password: String,
+  },
+  {
+    toJSON: {
+      versionKey: false,
+      transform: (_doc, ret) => {
+        ret.id = ret._id;
+        delete ret._id;
+        delete ret.password;
+      },
+    },
+  }
+);
 
 userSchema.statics.build = (attr: UserAttributes) => {
   return new User(attr);
@@ -33,4 +43,6 @@ userSchema.pre("save", async function (done) {
   }
   done();
 });
+const User = mongoose.model<UserDoc, UserModel>("User", userSchema);
+
 export { User };

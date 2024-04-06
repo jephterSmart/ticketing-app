@@ -1,6 +1,9 @@
 import { Router, Request, Response } from "express";
-import { body, validationResult } from "express-validator";
-import { RequestValidationError } from "../errors/RequestValidationError";
+import { body } from "express-validator";
+import { User } from "../models/user";
+import { BadRequestError } from "../errors/BadRequestError";
+import { validationHandler } from "../middlewares/validationHandler";
+import { signData } from "../services/jwt";
 
 const router = Router();
 
@@ -16,12 +19,22 @@ router.post(
         "Password is not strong enough, must contain number, lower and uppercase letters, and special characters"
       ),
   ],
-  (req: Request, res: Response) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      throw new RequestValidationError(errors.array());
+  validationHandler,
+  async (req: Request, res: Response) => {
+    const { email, password } = req.body;
+
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      throw new BadRequestError("Email already exist on platform");
     }
-    console.log(errors);
+    const newUser = User.build({ email, password });
+    await newUser.save();
+    const jwt = signData({ email: newUser.email, id: newUser.id });
+    req.session = {
+      ...(req.session || {}),
+      jwt,
+    };
+    return res.status(201).json({ data: newUser });
   }
 );
 
