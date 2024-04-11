@@ -28,7 +28,8 @@ router.post(
     if (!existingUser) {
       throw new BadRequestError("Email or password incorrect");
     }
-    const passwordMatch = compare(existingUser.password, password);
+    const passwordMatch = await compare(existingUser.password, password);
+
     if (!passwordMatch) {
       throw new BadRequestError("Email or password incorrect");
     }

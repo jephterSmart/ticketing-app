@@ -13,7 +13,7 @@ router.post(
     body("email").trim().isEmail().withMessage("Email is not valid"),
     body("password")
       .trim()
-      .isLength({ min: 4, max: 20 })
+      .bail()
       .isStrongPassword()
       .withMessage(
         "Password is not strong enough, must contain number, lower and uppercase letters, and special characters"
